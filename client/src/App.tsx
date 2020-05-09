@@ -16,15 +16,14 @@ const dev = process.env.NODE_ENV === 'development'
 
 const App = () => {
   const [currentState, setCurrentState] = useState<StateType>({ init: true, participants: [], messages: [], name: "" });
+  const [msgValue, setMsgValue] = useState('');
 
   const onParticipantSubmit = (e: any) =>  {
     e.preventDefault();
     const inputEl: HTMLInputElement = document.getElementById("formInput") as HTMLInputElement;
     const input = inputEl.value;
 
-    if (input === "") {
-      return;
-    }
+    if (input === "") return;
 
     const location = dev ? 'localhost:8081' : document.location.host;
     const url = `${document.location.protocol.replace("http", "ws")}//${location}/ws?name=${input}`;
@@ -44,9 +43,7 @@ const App = () => {
     const inputEl: HTMLInputElement = document.getElementById("text-entry-input") as HTMLInputElement;
     let input = inputEl.value;
 
-    if (input === "") {
-      return;
-    }
+    if (input === "") return;
 
     // send message request to server
     socket.send(JSON.stringify({
@@ -55,7 +52,12 @@ const App = () => {
       timestamp: new Date().toLocaleTimeString(),
     }));
 
-    input = "";
+    setMsgValue('');
+  }
+
+  const handleOnChange = (e: any) => {
+    const targetValue = e.target.value;
+    setMsgValue(targetValue);
   }
 
   useEffect(() => {
@@ -65,9 +67,8 @@ const App = () => {
       mainElement.scrollTop = mainElement.scrollHeight;
 
       socket.onmessage = (event: any) => {
-        console.log(event);
         const data = JSON.parse(event.data);
-        console.log(data);
+
         if (!data.text) { // client added
           setCurrentState(prevState => ({ ...prevState, participants: data }));
         } else { // message added
@@ -89,30 +90,30 @@ const App = () => {
         </div>
       }
       {!currentState.init &&
-      <div id="box-main">
-        <div style={{width: "100%", height: "100%"}}>
-          <div id="top">
-            <div id="participants-main">
-              <b>{`Participants (${currentState.participants.length}):`}</b>
-              {currentState.participants.map(participant =>
-                <div>{participant}</div>
-              )}
+        <div id="box-main">
+          <div style={{width: "100%", height: "100%"}}>
+            <div id="top">
+              <div id="participants-main">
+                <b>{`Participants (${currentState.participants.length}):`}</b>
+                {currentState.participants.map(participant =>
+                  <div>{participant}</div>
+                )}
+              </div>
+              <div id="conversation-main">
+                {currentState.messages.map(message =>
+                  <Message message={message} />
+                )}
+              </div>
             </div>
-            <div id="conversation-main">
-              {currentState.messages.map(message =>
-                <Message message={message} />
-              )}
-            </div>
-          </div>
-          <div id="bottom">
-            <div id="text-entry-main">
-              <form onSubmit={onTextSubmit} id="text-entry-form">
-                <input type="text" id="text-entry-input" />
-              </form>
+            <div id="bottom">
+              <div id="text-entry-main">
+                <form onSubmit={onTextSubmit} id="text-entry-form">
+                  <input type="text" id="text-entry-input" placeholder="Type a message..." value={msgValue} onChange={handleOnChange} />
+                </form>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       }
     </div>
   );
